@@ -2,28 +2,36 @@ package main
 
 import (
 	"fmt"
+	"html/template"
+	"log"
 	"net/http"
-	"text/template"
+	"path/filepath"
 
 	"github.com/go-chi/chi/v5"
 )
 
-func homeHandler(w http.ResponseWriter, r *http.Request) {
+func ExecuteTemplate(w http.ResponseWriter, path string) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-
-	tmpl, err := template.ParseFiles("templates/home.gohtml")
+	tmpl, err := template.ParseFiles(path)
 	if err != nil {
-		panic(err)
+		log.Printf("Error parsing template: %q", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 	err = tmpl.Execute(w, nil)
 	if err != nil {
-		panic(err)
+		log.Printf("Error executing template: %q", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
+func homeHandler(w http.ResponseWriter, r *http.Request) {
+	path := filepath.Join("templates", "home.gohtml")
+	ExecuteTemplate(w, path)
+}
+
 func contactsHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprintln(w, "<h1>Contacts page</h1>")
+	path := filepath.Join("templates", "contacts.gohtml")
+	ExecuteTemplate(w, path)
 }
 
 func userHandler(w http.ResponseWriter, r *http.Request) {
