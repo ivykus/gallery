@@ -2,26 +2,22 @@ package main
 
 import (
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 	"path/filepath"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/ivykus/gallery/views"
 )
 
 func ExecuteTemplate(w http.ResponseWriter, path string) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	tmpl, err := template.ParseFiles(path)
+	viewTmpl, err := views.Parse(path)
 	if err != nil {
-		log.Printf("Error parsing template: %q", err)
+		log.Printf("%q", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-	err = tmpl.Execute(w, nil)
-	if err != nil {
-		log.Printf("Error executing template: %q", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
+	viewTmpl.Execute(w, nil)
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
