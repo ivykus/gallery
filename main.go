@@ -15,10 +15,10 @@ func main() {
 	fs := templates.FS
 
 	r.Get("/", controllers.StaticHandler(
-		views.Must(views.ParseFS(fs, "home.gohtml"))))
+		views.Must(views.ParseFS(fs, "home.gohtml", "tailwind.gohtml"))))
 
 	r.Get("/contacts", controllers.StaticHandler(
-		views.Must(views.ParseFS(fs, "contacts.gohtml"))))
+		views.Must(views.ParseFS(fs, "contacts.gohtml", "tailwind.gohtml"))))
 
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Page not found", http.StatusNotFound)
