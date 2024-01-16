@@ -3,6 +3,7 @@ package views
 import (
 	"fmt"
 	"html/template"
+	"io/fs"
 	"log"
 	"net/http"
 )
@@ -16,6 +17,17 @@ func Must(t Template, err error) Template {
 
 type Template struct {
 	htmlTpl *template.Template
+}
+
+func ParseFS(fs fs.FS, patterns string) (Template, error) {
+	tmpl, err := template.ParseFS(fs, patterns)
+	if err != nil {
+		return Template{}, fmt.Errorf("parsing error %w", err)
+	}
+
+	return Template{
+		htmlTpl: tmpl,
+	}, nil
 }
 
 func Parse(path string) (Template, error) {
