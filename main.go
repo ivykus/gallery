@@ -20,6 +20,9 @@ func main() {
 	r.Get("/contacts", controllers.StaticHandler(
 		views.Must(views.ParseFS(fs, "contacts.gohtml", "tailwind.gohtml"))))
 
+	r.Get("/faq", controllers.FaqHandler(
+		views.Must(views.ParseFS(fs, "faq.gohtml", "tailwind.gohtml"))))
+
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Page not found", http.StatusNotFound)
 	})
