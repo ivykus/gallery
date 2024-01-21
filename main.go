@@ -41,12 +41,19 @@ func main() {
 	usersC.Templates.New = views.Must(views.ParseFS(fs, "signup.gohtml",
 		"tailwind.gohtml"))
 
+	usersC.Templates.SignIn = views.Must(views.ParseFS(fs, "signin.gohtml",
+		"tailwind.gohtml"))
+
 	r.Get("/signup", usersC.New)
 	r.Post("/users", usersC.Create)
+	r.Get("/signin", usersC.SignIn)
 
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Page not found", http.StatusNotFound)
 	})
 	fmt.Println("Server is running on port 3000")
-	http.ListenAndServe(":3000", r)
+	err = http.ListenAndServe(":3000", r)
+	if err != nil {
+		panic(err)
+	}
 }
