@@ -21,7 +21,7 @@ func main() {
 	}
 
 	us := models.UserService{DB: db}
-	user, err := us.CreateUser("some2@me.com", "some123")
+	user, err := us.CreateUser("soMe2@me.com", "some123")
 	if err != nil {
 		panic(err)
 	}

@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -18,6 +19,7 @@ type UserService struct {
 }
 
 func (us *UserService) CreateUser(email, password string) (*User, error) {
+	email = strings.ToLower(email)
 
 	hashBytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
