@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/ivykus/gallery/controllers"
+	"github.com/ivykus/gallery/models"
 	"github.com/ivykus/gallery/templates"
 	"github.com/ivykus/gallery/views"
 )
@@ -23,7 +24,19 @@ func main() {
 	r.Get("/faq", controllers.FaqHandler(
 		views.Must(views.ParseFS(fs, "faq.gohtml", "tailwind.gohtml"))))
 
-	usersC := controllers.User{}
+	cfg := models.DefaultPostgresConfig()
+
+	db, err := models.Open(cfg)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	UserService := models.UserService{DB: db}
+
+	usersC := controllers.User{
+		UserService: &UserService,
+	}
 
 	usersC.Templates.New = views.Must(views.ParseFS(fs, "signup.gohtml",
 		"tailwind.gohtml"))
