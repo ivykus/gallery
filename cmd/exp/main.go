@@ -1,15 +1,15 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 
 	"github.com/ivykus/gallery/models"
-	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 func main() {
-	db, err := sql.Open("pgx", "host=localhost port=5432 user=ivykus password=temp dbname=gallery")
+	cfg := models.DefaultPostgresConfig()
+
+	db, err := models.Open(cfg)
 	if err != nil {
 		panic(err)
 	}
@@ -21,7 +21,7 @@ func main() {
 	}
 
 	us := models.UserService{DB: db}
-	user, err := us.CreateUser("soMe2@me.com", "some123")
+	user, err := us.CreateUser("soMe23@me.com", "some123")
 	if err != nil {
 		panic(err)
 	}
