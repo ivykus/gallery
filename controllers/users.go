@@ -42,15 +42,8 @@ func (u User) Create(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/signin", http.StatusFound)
 		return
 	}
-	cookie := http.Cookie{
-		Name:     "gallery-session",
-		Value:    session.Token,
-		Path:     "/",
-		HttpOnly: true,
-	}
-	http.SetCookie(w, &cookie)
+	setCookie(w, CookieSession, session.Token)
 	http.Redirect(w, r, "/users/me", http.StatusFound)
-
 }
 
 func (u User) SignIn(w http.ResponseWriter, r *http.Request) {
@@ -78,27 +71,20 @@ func (u User) ProcessSignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cookie := http.Cookie{
-		Name:     "gallery-session",
-		Value:    session.Token,
-		Path:     "/",
-		HttpOnly: true,
-	}
-
-	http.SetCookie(w, &cookie)
+	setCookie(w, CookieSession, session.Token)
 	http.Redirect(w, r, "/users/me", http.StatusFound)
 
 	fmt.Fprintf(w, "Authenticated user %v\n", user)
 }
 
 func (u User) CurrentUser(w http.ResponseWriter, r *http.Request) {
-	tokenCookie, err := r.Cookie("gallery-session")
+	token, err := readCookie(r, CookieSession)
 	if err != nil {
 		fmt.Printf("Error getting cookie: %v\n", err)
 		http.Redirect(w, r, "/signin", http.StatusFound)
 		return
 	}
-	user, err := u.SessionService.User(tokenCookie.Value)
+	user, err := u.SessionService.User(token)
 	if err != nil {
 		fmt.Printf("Error getting session: %v\n", err)
 		http.Redirect(w, r, "/signin", http.StatusFound)
