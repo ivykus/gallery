@@ -34,9 +34,11 @@ func main() {
 	defer db.Close()
 
 	UserService := models.UserService{DB: db}
+	SessionService := models.SessionService{DB: db}
 
 	usersC := controllers.User{
-		UserService: &UserService,
+		UserService:    &UserService,
+		SessionService: &SessionService,
 	}
 
 	usersC.Templates.New = views.Must(views.ParseFS(fs, "signup.gohtml",
