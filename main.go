@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/gorilla/csrf"
 	"github.com/ivykus/gallery/controllers"
 	"github.com/ivykus/gallery/models"
 	"github.com/ivykus/gallery/templates"
@@ -53,8 +54,17 @@ func main() {
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Page not found", http.StatusNotFound)
 	})
+
+	csrfKey := "FnsdflDSD9SDg82nlz00guu23xvjsDdD"
+
+	csrfMw := csrf.Protect(
+		[]byte(csrfKey),
+		//TODO: fix this before deployment
+		csrf.Secure(false),
+	)
+
 	fmt.Println("Server is running on port 3000")
-	err = http.ListenAndServe(":3000", r)
+	err = http.ListenAndServe(":3000", csrfMw(r))
 	if err != nil {
 		panic(err)
 	}

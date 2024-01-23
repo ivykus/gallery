@@ -6,6 +6,8 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/csrf"
 )
 
 func Must(t Template, err error) Template {
@@ -20,7 +22,13 @@ type Template struct {
 }
 
 func ParseFS(fs fs.FS, patterns ...string) (Template, error) {
-	tmpl, err := template.ParseFS(fs, patterns...)
+	tpl := template.New(patterns[0])
+	tpl = tpl.Funcs(template.FuncMap{
+		"csrfField": func() template.HTML {
+			return `<input type="hidden" name="csrf" />`
+		},
+	})
+	tmpl, err := tpl.ParseFS(fs, patterns...)
 	if err != nil {
 		return Template{}, fmt.Errorf("parsing error %w", err)
 	}
@@ -41,10 +49,21 @@ func Parse(path string) (Template, error) {
 	}, nil
 }
 
-func (t Template) Execute(w http.ResponseWriter, data any) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+func (t Template) Execute(w http.ResponseWriter, r *http.Request, data any) {
+	tpl, err := t.htmlTpl.Clone()
+	if err != nil {
+		log.Printf("Error cloning template: %q", err)
+		http.Error(w, "Error while rendering page", http.StatusInternalServerError)
+		return
+	}
+	tpl = tpl.Funcs(template.FuncMap{
+		"csrfField": func() template.HTML {
+			return csrf.TemplateField(r)
+		},
+	})
 
-	err := t.htmlTpl.Execute(w, data)
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	err = tpl.Execute(w, data)
 	if err != nil {
 		log.Printf("Error executing template: %q", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
