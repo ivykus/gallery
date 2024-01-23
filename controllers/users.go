@@ -13,7 +13,8 @@ type User struct {
 		SignIn Template
 	}
 
-	UserService *models.UserService
+	UserService    *models.UserService
+	SessionService *models.SessionService
 }
 
 func (u User) New(w http.ResponseWriter, r *http.Request) {
@@ -33,7 +34,23 @@ func (u User) Create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Something went wrong...", http.StatusInternalServerError)
 		return
 	}
-	fmt.Fprintf(w, "Created user %v\n", user)
+
+	session, err := u.SessionService.Create(user.Id)
+	if err != nil {
+		// TODO: handle error
+		fmt.Println(err)
+		http.Redirect(w, r, "/signin", http.StatusFound)
+		return
+	}
+	cookie := http.Cookie{
+		Name:     "gallery-session",
+		Value:    session.Token,
+		Path:     "/",
+		HttpOnly: true,
+	}
+	http.SetCookie(w, &cookie)
+	http.Redirect(w, r, "/users/me", http.StatusFound)
+
 }
 
 func (u User) SignIn(w http.ResponseWriter, r *http.Request) {
@@ -54,24 +71,38 @@ func (u User) ProcessSignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	session, err := u.SessionService.Create(user.Id)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Something went wrong...", http.StatusInternalServerError)
+		return
+	}
+
 	cookie := http.Cookie{
-		Name:     "gallery-email",
-		Value:    user.Email,
+		Name:     "gallery-session",
+		Value:    session.Token,
 		Path:     "/",
 		HttpOnly: true,
 	}
 
 	http.SetCookie(w, &cookie)
+	http.Redirect(w, r, "/users/me", http.StatusFound)
 
 	fmt.Fprintf(w, "Authenticated user %v\n", user)
 }
 
 func (u User) CurrentUser(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie("gallery-email")
+	tokenCookie, err := r.Cookie("gallery-session")
 	if err != nil {
 		fmt.Printf("Error getting cookie: %v\n", err)
+		http.Redirect(w, r, "/signin", http.StatusFound)
 		return
 	}
-
-	fmt.Fprintf(w, "Current user: %v\n", cookie.Value)
+	user, err := u.SessionService.User(tokenCookie.Value)
+	if err != nil {
+		fmt.Printf("Error getting session: %v\n", err)
+		http.Redirect(w, r, "/signin", http.StatusFound)
+		return
+	}
+	fmt.Fprintf(w, "Current user: %v\n", user)
 }

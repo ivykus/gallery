@@ -15,7 +15,7 @@ type SessionService struct {
 	DB *sql.DB
 }
 
-func (ss *SessionService) Create() (*Session, error) {
+func (ss *SessionService) Create(userId int) (*Session, error) {
 	return nil, nil
 }
 
