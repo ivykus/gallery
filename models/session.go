@@ -79,23 +79,15 @@ func (ss *SessionService) User(token string) (*User, error) {
 	user := User{}
 
 	row := ss.DB.QueryRow(
-		`SELECT user_id
+		`SELECT users.id, users.email, users.password_hash
 		FROM sessions
-		WHERE token_hash = $1`,
+		JOIN users
+		ON sessions.user_id = users.id
+		WHERE sessions.token_hash = $1`,
 		token,
 	)
-	if err := row.Scan(&user.Id); err != nil {
-		return nil, fmt.Errorf("user: %w", err)
-	}
 
-	row = ss.DB.QueryRow(`
-		SELECT email, password_hash
-		FROM users
-		WHERE id = $1`,
-		user.Id,
-	)
-	err := row.Scan(&user.Email, &user.PasswordHash)
-	if err != nil {
+	if err := row.Scan(&user.Id, &user.Email, &user.PasswordHash); err != nil {
 		return nil, fmt.Errorf("user: %w", err)
 	}
 
