@@ -55,6 +55,8 @@ func main() {
 
 	// setup routes
 	r := chi.NewRouter()
+	r.Use(csrfMw)
+	r.Use(umw.SetUser)
 	r.Get("/", controllers.StaticHandler(views.Must(views.ParseFS(
 		templates.FS,
 		"home.gohtml", "tailwind.gohtml"))))
@@ -70,7 +72,10 @@ func main() {
 	r.Get("/signin", usersC.SignIn)
 	r.Post("/signin", usersC.ProcessSignIn)
 	r.Post("/signout", usersC.ProcessSignOut)
-	r.Get("/users/me", usersC.CurrentUser)
+	r.Route("/users/me", func(r chi.Router) {
+		r.Use(umw.RequireUser)
+		r.Get("/", usersC.CurrentUser)
+	})
 
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Page not found", http.StatusNotFound)
@@ -78,7 +83,7 @@ func main() {
 
 	// start the server
 	fmt.Println("Server is running on port 3000")
-	err = http.ListenAndServe(":3000", csrfMw(umw.SetUser(r)))
+	err = http.ListenAndServe(":3000", r)
 	if err != nil {
 		panic(err)
 	}
