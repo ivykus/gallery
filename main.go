@@ -64,6 +64,10 @@ func main() {
 		http.Error(w, "Page not found", http.StatusNotFound)
 	})
 
+	umw := controllers.UserMiddleware{
+		SessionService: &SessionService,
+	}
+
 	csrfKey := "FnsdflDSD9SDg82nlz00guu23xvjsDdD"
 
 	csrfMw := csrf.Protect(
@@ -73,7 +77,7 @@ func main() {
 	)
 
 	fmt.Println("Server is running on port 3000")
-	err = http.ListenAndServe(":3000", csrfMw(r))
+	err = http.ListenAndServe(":3000", csrfMw(umw.SetUser(r)))
 	if err != nil {
 		panic(err)
 	}

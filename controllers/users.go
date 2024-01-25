@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/ivykus/gallery/context"
 	"github.com/ivykus/gallery/models"
 )
 
@@ -78,19 +79,28 @@ func (u User) ProcessSignIn(w http.ResponseWriter, r *http.Request) {
 }
 
 func (u User) CurrentUser(w http.ResponseWriter, r *http.Request) {
-	token, err := readCookie(r, CookieSession)
-	if err != nil {
-		fmt.Printf("Error getting cookie: %v\n", err)
+
+	user := context.User(r.Context())
+	if user == nil {
 		http.Redirect(w, r, "/signin", http.StatusFound)
 		return
 	}
-	user, err := u.SessionService.User(token)
-	if err != nil {
-		fmt.Printf("Error getting session: %v\n", err)
-		http.Redirect(w, r, "/signin", http.StatusFound)
-		return
-	}
+
 	fmt.Fprintf(w, "Current user: %v\n", user)
+
+	// token, err := readCookie(r, CookieSession)
+	// if err != nil {
+	// 	fmt.Printf("Error getting cookie: %v\n", err)
+	// 	http.Redirect(w, r, "/signin", http.StatusFound)
+	// 	return
+	// }
+	// user, err := u.SessionService.User(token)
+	// if err != nil {
+	// 	fmt.Printf("Error getting session: %v\n", err)
+	// 	http.Redirect(w, r, "/signin", http.StatusFound)
+	// 	return
+	// }
+	// fmt.Fprintf(w, "Current user: %v\n", user)
 }
 
 func (u User) ProcessSignOut(w http.ResponseWriter, r *http.Request) {
@@ -107,4 +117,25 @@ func (u User) ProcessSignOut(w http.ResponseWriter, r *http.Request) {
 	}
 	deleteCookie(w, CookieSession)
 	http.Redirect(w, r, "/signin", http.StatusFound)
+}
+
+type UserMiddleware struct {
+	SessionService *models.SessionService
+}
+
+func (umw UserMiddleware) SetUser(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		token, err := readCookie(r, CookieSession)
+		if err != nil {
+			next.ServeHTTP(w, r)
+			return
+		}
+		user, err := umw.SessionService.User(token)
+		if err != nil {
+			next.ServeHTTP(w, r)
+			return
+		}
+		ctx := context.WithUser(r.Context(), user)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }
