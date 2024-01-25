@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/csrf"
 	"github.com/ivykus/gallery/controllers"
+	"github.com/ivykus/gallery/migrations"
 	"github.com/ivykus/gallery/models"
 	"github.com/ivykus/gallery/templates"
 	"github.com/ivykus/gallery/views"
@@ -33,7 +34,7 @@ func main() {
 	}
 	defer db.Close()
 
-	err = models.Migrate(db, "migrations")
+	err = models.MigrateFs(db, migrations.FS, ".")
 	if err != nil {
 		panic(err)
 	}
