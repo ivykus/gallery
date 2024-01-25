@@ -14,20 +14,8 @@ import (
 )
 
 func main() {
-	r := chi.NewRouter()
-	fs := templates.FS
-
-	r.Get("/", controllers.StaticHandler(
-		views.Must(views.ParseFS(fs, "home.gohtml", "tailwind.gohtml"))))
-
-	r.Get("/contacts", controllers.StaticHandler(
-		views.Must(views.ParseFS(fs, "contacts.gohtml", "tailwind.gohtml"))))
-
-	r.Get("/faq", controllers.FaqHandler(
-		views.Must(views.ParseFS(fs, "faq.gohtml", "tailwind.gohtml"))))
-
+	// setup database
 	cfg := models.DefaultPostgresConfig()
-
 	db, err := models.Open(cfg)
 	if err != nil {
 		panic(err)
@@ -39,19 +27,43 @@ func main() {
 		panic(err)
 	}
 
+	// setup services
 	UserService := models.UserService{DB: db}
 	SessionService := models.SessionService{DB: db}
 
+	// setup middleware
+	umw := controllers.UserMiddleware{
+		SessionService: &SessionService,
+	}
+
+	csrfKey := "FnsdflDSD9SDg82nlz00guu23xvjsDdD"
+	csrfMw := csrf.Protect(
+		[]byte(csrfKey),
+		//TODO: fix this before deployment
+		csrf.Secure(false),
+	)
+
+	// setup controllers
 	usersC := controllers.User{
 		UserService:    &UserService,
 		SessionService: &SessionService,
 	}
+	usersC.Templates.New = views.Must(views.ParseFS(templates.FS,
+		"signup.gohtml", "tailwind.gohtml"))
+	usersC.Templates.SignIn = views.Must(views.ParseFS(templates.FS,
+		"signin.gohtml", "tailwind.gohtml"))
 
-	usersC.Templates.New = views.Must(views.ParseFS(fs, "signup.gohtml",
-		"tailwind.gohtml"))
-
-	usersC.Templates.SignIn = views.Must(views.ParseFS(fs, "signin.gohtml",
-		"tailwind.gohtml"))
+	// setup routes
+	r := chi.NewRouter()
+	r.Get("/", controllers.StaticHandler(views.Must(views.ParseFS(
+		templates.FS,
+		"home.gohtml", "tailwind.gohtml"))))
+	r.Get("/contacts", controllers.StaticHandler(views.Must(views.ParseFS(
+		templates.FS,
+		"contacts.gohtml", "tailwind.gohtml"))))
+	r.Get("/faq", controllers.FaqHandler(views.Must(views.ParseFS(
+		templates.FS,
+		"faq.gohtml", "tailwind.gohtml"))))
 
 	r.Get("/signup", usersC.New)
 	r.Post("/users", usersC.Create)
@@ -64,18 +76,7 @@ func main() {
 		http.Error(w, "Page not found", http.StatusNotFound)
 	})
 
-	umw := controllers.UserMiddleware{
-		SessionService: &SessionService,
-	}
-
-	csrfKey := "FnsdflDSD9SDg82nlz00guu23xvjsDdD"
-
-	csrfMw := csrf.Protect(
-		[]byte(csrfKey),
-		//TODO: fix this before deployment
-		csrf.Secure(false),
-	)
-
+	// start the server
 	fmt.Println("Server is running on port 3000")
 	err = http.ListenAndServe(":3000", csrfMw(umw.SetUser(r)))
 	if err != nil {
