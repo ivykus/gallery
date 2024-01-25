@@ -31,15 +31,18 @@
          href="/faq">FAQ</a>
     </div>
     <div>
-      <form action="/signout" method="POST" class="inline pr-4">
-        <div class="hidden">
-          {{csrfField}}
-        </div>
-        <button type="submit">Sign Out</button>
-      </form>
-      <a class="pr-4 hover:text-teal-300" href="/signin">Sign In</a>
-      <a class="px-4 py-4 bg-teal-950 hover:bg-teal-600 rounded" 
-       href="/signup">Sign Up</a>
+      {{if currentUser}}
+        <form action="/signout" method="POST" class="inline pr-4">
+          <div class="hidden">
+            {{csrfField}}
+          </div>
+          <button type="submit">Sign Out</button>
+        </form>
+      {{else}}
+        <a class="pr-4 hover:text-teal-300" href="/signin">Sign In</a>
+        <a class="px-4 py-4 bg-teal-950 hover:bg-teal-600 rounded" 
+        href="/signup">Sign Up</a>
+      {{end}}
     </div>
   </nav>
 </header>
