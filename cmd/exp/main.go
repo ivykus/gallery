@@ -3,119 +3,41 @@ package main
 import (
 	"fmt"
 
-	"github.com/ivykus/gallery/models"
+	"github.com/go-mail/mail/v2"
+)
+
+// Host	sandbox-smtp.mailcatch.app
+// Port	25, 1025, 2525
+// Username	c8648ea7b08f
+// Password	711d678a04e4
+
+const (
+	host     = "sandbox-smtp.mailcatch.app"
+	port     = 1025
+	username = "c8648ea7b08f"
+	password = "711d678a04e4"
 )
 
 func main() {
-	cfg := models.DefaultPostgresConfig()
+	from := "test@ivygallery.com"
+	to := "themoonissilent@gmail.com"
+	subject := "this is a test email"
+	plaintext := "this is a body"
+	html := "<h1>Hello</h1><p>This is email</p>"
 
-	db, err := models.Open(cfg)
+	msg := mail.NewMessage()
+	msg.SetHeader("To", to)
+	msg.SetHeader("From", from)
+	msg.SetHeader("Subject", subject)
+	msg.SetBody("text/plain", plaintext)
+	msg.AddAlternative("text/html", html)
+	// msg.WriteTo(os.Stdout)
+
+	dialer := mail.NewDialer(host, port, username, password)
+	err := dialer.DialAndSend(msg)
 	if err != nil {
 		panic(err)
 	}
-	defer db.Close()
+	fmt.Println("Msg sent")
 
-	err = db.Ping()
-	if err != nil {
-		panic(err)
-	}
-
-	us := models.UserService{DB: db}
-	user, err := us.CreateUser("soMe23@me.com", "some123")
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(user)
-
-	// _, err = db.Exec(`
-	// 	CREATE TABLE IF NOT EXISTS users (
-	// 		id SERIAL PRIMARY KEY,
-	// 		name TEXT,
-	// 		email TEXT UNIQUE NOT NULL
-	// 	);
-
-	// 	CREATE TABLE IF NOT EXISTS orders (
-	// 		id SERIAL PRIMARY KEY,
-	// 		user_id INT NOT NULL,
-	// 		amount INT,
-	// 		description TEXT
-	// 	);
-	// `)
-
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// fmt.Println("Connected!")
-
-	// name := "Edmund"
-	// email := "edmund@me.com"
-
-	// row := db.QueryRow(
-	// 	"INSERT INTO users (name, email) VALUES ($1, $2) RETURNING id",
-	// 	name, email,
-	// )
-	// var id int
-	// err = row.Scan(&id)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// fmt.Println("Inserted user with id", id)
-
-	// id := 1
-	// row := db.QueryRow(`
-	// 	SELECT name, email FROM users WHERE id = $1
-	// `, id)
-	// var name, email string
-	// err = row.Scan(&name, &email)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// fmt.Printf("name = %s, email = %s\n", name, email)
-
-	// user_id := id
-	// for i := 1; i < 6; i++ {
-	// 	amount := 1
-	// 	desc := fmt.Sprintf("order %d", i)
-
-	// 	_, err = db.Exec(
-	// 		"INSERT INTO orders (user_id, amount, description) VALUES ($1, $2, $3)",
-	// 		user_id, amount, desc,
-	// 	)
-	// 	if err != nil {
-	// 		panic(err)
-	// 	}
-	// }
-
-	// type Order struct {
-	// 	ID          int
-	// 	UserID      int
-	// 	Amount      int
-	// 	Descripiton string
-	// }
-	// var orders []Order
-
-	// rows, err := db.Query(
-	// 	`SELECT id, amount, description FROM orders
-	// 	WHERE user_id = $1
-	// 	`, user_id)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// defer rows.Close()
-
-	// for rows.Next() {
-	// 	var o Order
-	// 	o.UserID = user_id
-	// 	err = rows.Scan(&o.ID, &o.Amount, &o.Descripiton)
-	// 	if err != nil {
-	// 		panic(err)
-	// 	}
-	// 	orders = append(orders, o)
-	// }
-	// if err = rows.Err(); err != nil {
-	// 	panic(err)
-	// }
-
-	// fmt.Println("Orders", orders)
 }
