@@ -15,6 +15,7 @@ type User struct {
 		SignIn         Template
 		ForgotPassword Template
 		CheckYourEmail Template
+		ResetPassword  Template
 	}
 
 	UserService          *models.UserService
@@ -157,6 +158,44 @@ func (u User) ProcessForgotPassword(w http.ResponseWriter, r *http.Request) {
 	}
 	// http.Redirect(w, r, "/signin", http.StatusFound)
 	u.Templates.CheckYourEmail.Execute(w, r, data)
+}
+
+func (u User) ResetPassword(w http.ResponseWriter, r *http.Request) {
+	var data struct {
+		Token string
+	}
+	data.Token = r.FormValue("token")
+	u.Templates.ResetPassword.Execute(w, r, data)
+}
+
+func (u User) ProcessResetPassword(w http.ResponseWriter, r *http.Request) {
+	var data struct {
+		Token    string
+		Password string
+	}
+	data.Token = r.FormValue("token")
+	data.Password = r.FormValue("password")
+
+	user, err := u.PasswordResetService.Consume(data.Token)
+	if err != nil {
+		fmt.Println(err)
+		// TODO: handle other different errors
+		http.Error(w, "Something went wrong...", http.StatusInternalServerError)
+		return
+	}
+
+	// TODO update password
+
+	session, err := u.SessionService.Create(user.Id)
+	if err != nil {
+		fmt.Println(err)
+		http.Redirect(w, r, "/signin", http.StatusFound)
+		return
+	}
+
+	setCookie(w, CookieSession, session.Token)
+	http.Redirect(w, r, "/users/me", http.StatusFound)
+
 }
 
 type UserMiddleware struct {
