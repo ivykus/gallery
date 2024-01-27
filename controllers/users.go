@@ -184,7 +184,12 @@ func (u User) ProcessResetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO update password
+	err = u.UserService.UpdatePassword(user.Id, data.Password)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Something went wrong...", http.StatusInternalServerError)
+		return
+	}
 
 	session, err := u.SessionService.Create(user.Id)
 	if err != nil {
