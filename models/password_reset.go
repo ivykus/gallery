@@ -84,7 +84,53 @@ func (ps *PasswordResetService) Create(email string) (*PasswordReset, error) {
 }
 
 func (ps *PasswordResetService) Consume(token string) (*User, error) {
-	return nil, fmt.Errorf("TODO: implement PasswordResetService.Consume")
+	tokenHash := ps.hash(token)
+
+	var user User
+	var pwReset PasswordReset
+
+	row := ps.DB.QueryRow(`
+		SELECT passwords_reset.id,
+		passwords_reset.expires_at,
+		users.id,
+		users.email,
+		users.password_hash
+		FROM passwords_reset
+		JOIN users
+		ON passwords_reset.user_id = users.id
+		WHERE passwords_reset.token_hash = $1
+	`, tokenHash)
+	err := row.Scan(
+		&pwReset.ID,
+		&pwReset.ExpiresAt,
+		&user.Id,
+		&user.Email,
+		&user.PasswordHash,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("consume: %w", err)
+	}
+	if time.Now().After(pwReset.ExpiresAt) {
+		return nil, fmt.Errorf("token expired: %v", token)
+	}
+
+	err = ps.delete(pwReset.ID)
+	if err != nil {
+		return nil, fmt.Errorf("consume: %w", err)
+	}
+
+	return &user, nil
+}
+
+func (ps *PasswordResetService) delete(id int) error {
+	_, err := ps.DB.Exec(`
+		DELETE FROM passwords_reset
+		WHERE id = $1
+	`, id)
+	if err != nil {
+		return fmt.Errorf("delete: %w", err)
+	}
+	return nil
 }
 
 func (ps *PasswordResetService) hash(token string) string {
