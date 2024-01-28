@@ -3,6 +3,8 @@ package models
 import (
 	"database/sql"
 	"fmt"
+
+	"github.com/ivykus/gallery/errors"
 )
 
 type Gallery struct {
@@ -29,6 +31,25 @@ func (gs *GalleryService) Create(title string, userID int) (*Gallery, error) {
 
 	if err := raw.Scan(&gallery.ID); err != nil {
 		return nil, fmt.Errorf("create gallery: %w", err)
+	}
+	return &gallery, nil
+}
+
+func (gs *GalleryService) ByID(galleryID int) (*Gallery, error) {
+	gallery := Gallery{
+		ID: galleryID,
+	}
+	row := gs.DB.QueryRow(`
+		SELECT title, user_id
+		FROM galleries
+		WHERE id = $1;
+	`, galleryID)
+
+	if err := row.Scan(&gallery.Title, &gallery.UserID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, fmt.Errorf("gallery query by id: %w", err)
 	}
 	return &gallery, nil
 }
