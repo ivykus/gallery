@@ -6,6 +6,7 @@ import (
 	"net/url"
 
 	"github.com/ivykus/gallery/context"
+	"github.com/ivykus/gallery/errors"
 	"github.com/ivykus/gallery/models"
 )
 
@@ -33,12 +34,18 @@ func (u User) New(w http.ResponseWriter, r *http.Request) {
 }
 
 func (u User) Create(w http.ResponseWriter, r *http.Request) {
-	email := r.PostFormValue("email")
-	password := r.PostFormValue("password")
-	user, err := u.UserService.CreateUser(email, password)
+	var data struct {
+		Email    string
+		Password string
+	}
+	data.Email = r.PostFormValue("email")
+	data.Password = r.PostFormValue("password")
+	user, err := u.UserService.CreateUser(data.Email, data.Password)
 	if err != nil {
-		fmt.Println(err)
-		http.Error(w, "Something went wrong...", http.StatusInternalServerError)
+		if errors.Is(err, models.ErrEmailTaken) {
+			err = errors.Public(err, "That email is already taken")
+		}
+		u.Templates.New.Execute(w, r, data, err)
 		return
 	}
 

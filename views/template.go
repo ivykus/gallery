@@ -1,6 +1,7 @@
 package views
 
 import (
+	"errors"
 	"fmt"
 	"html/template"
 	"io/fs"
@@ -21,6 +22,10 @@ func Must(t Template, err error) Template {
 
 type Template struct {
 	htmlTpl *template.Template
+}
+
+type public interface {
+	Public() string
 }
 
 func ParseFS(fs fs.FS, patterns ...string) (Template, error) {
@@ -61,19 +66,24 @@ func Parse(path string) (Template, error) {
 	}, nil
 }
 
-func (t Template) Execute(w http.ResponseWriter, r *http.Request, data any) {
+func (t Template) Execute(w http.ResponseWriter, r *http.Request, data any, errs ...error) {
 	tpl, err := t.htmlTpl.Clone()
 	if err != nil {
 		log.Printf("Error cloning template: %q", err)
 		http.Error(w, "Error while rendering page", http.StatusInternalServerError)
 		return
 	}
+	errMsgs := ErrorMessages(errs...)
+
 	tpl = tpl.Funcs(template.FuncMap{
 		"csrfField": func() template.HTML {
 			return csrf.TemplateField(r)
 		},
 		"currentUser": func() *models.User {
 			return context.User(r.Context())
+		},
+		"errors": func() []string {
+			return errMsgs
 		},
 	})
 
@@ -83,4 +93,18 @@ func (t Template) Execute(w http.ResponseWriter, r *http.Request, data any) {
 		log.Printf("Error executing template: %q", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+}
+
+func ErrorMessages(errs ...error) []string {
+	var errMsgs []string
+	for _, err := range errs {
+		var pubErr public
+		if errors.As(err, &pubErr) {
+			errMsgs = append(errMsgs, pubErr.Public())
+		} else {
+			fmt.Println(err)
+			errMsgs = append(errMsgs, "Something went wrong...")
+		}
+	}
+	return errMsgs
 }
