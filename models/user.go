@@ -21,10 +21,6 @@ type UserService struct {
 	DB *sql.DB
 }
 
-var (
-	ErrEmailTaken = fmt.Errorf("models: email is already in use")
-)
-
 func (us *UserService) CreateUser(email, password string) (*User, error) {
 	email = strings.ToLower(email)
 
