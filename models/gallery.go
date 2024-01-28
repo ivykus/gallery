@@ -82,3 +82,26 @@ func (gs *GalleryService) ByUserID(userID int) ([]Gallery, error) {
 	}
 	return galleries, nil
 }
+
+func (gs *GalleryService) Update(gallery *Gallery) error {
+	_, err := gs.DB.Exec(`
+		UPDATE galleries
+		SET title = $1
+		WHERE id = $2;
+	`, gallery.Title, gallery.ID)
+	if err != nil {
+		return fmt.Errorf("update gallery: %w", err)
+	}
+	return nil
+}
+
+func (gs *GalleryService) Delete(galleryID int) error {
+	_, err := gs.DB.Exec(`
+		DELETE FROM galleries
+		WHERE id = $1;
+	`, galleryID)
+	if err != nil {
+		return fmt.Errorf("delete gallery: %w", err)
+	}
+	return nil
+}
