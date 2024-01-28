@@ -53,3 +53,32 @@ func (gs *GalleryService) ByID(galleryID int) (*Gallery, error) {
 	}
 	return &gallery, nil
 }
+
+func (gs *GalleryService) ByUserID(userID int) ([]Gallery, error) {
+	rows, err := gs.DB.Query(`
+		SELECT id, title
+		FROM galleries
+		WHERE user_id = $1;
+	`, userID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, fmt.Errorf("gallery query by user id: %w", err)
+	}
+	defer rows.Close()
+
+	var galleries []Gallery
+	for rows.Next() {
+		var gallery Gallery
+		if err := rows.Scan(&gallery.ID, &gallery.Title); err != nil {
+			return nil, fmt.Errorf("gallery query by user_id: %w", err)
+		}
+		galleries = append(galleries, gallery)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("gallery query by user_id: %w", err)
+	}
+	return galleries, nil
+}
