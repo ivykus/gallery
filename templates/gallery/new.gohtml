@@ -1,0 +1,32 @@
+{{template "header" .}}
+<div class="p-8 w-full">
+    <h1 class="pt-4 pb-8 text-3xl font-bold text-gray-800"> This is a gallery page </h1>
+    <form action="/galleries" method="post">
+            <div class="hidden">
+                {{csrfField}}
+            </div>
+            <div class="py-2">
+                <label for="title" class="text-sm font-semibold text-color-gray-800">
+                    Title
+                </label>
+                <input
+                    name="title"
+                    type="text"
+                    id="title"
+                    placeholder="Title of the gallery"
+                    required
+                    class="w-full px-3 py-2 border border-gray-300 placeholder-gray-300 
+            text-gray-800 rounded"
+                    value="{{.Title}}"
+                    {{if not .Title}} autofocus {{end}}
+                >
+            </div>
+            <div class="py-6">
+                <button type="submit" class="py-2 px-8 rounded bg-cyan-700 hover:bg-cyan-900 
+          font-semibold text-white text-lg">
+                    Create
+                </button>
+            </div>
+        </form>
+</div>
+{{template "footer" .}}

@@ -6,14 +6,14 @@ import (
 	"github.com/ivykus/gallery/models"
 )
 
-type Galleries struct {
+type Gallery struct {
 	Template struct {
 		New Template
 	}
 	GalleryService *models.GalleryService
 }
 
-func (g Galleries) New(w http.ResponseWriter, r *http.Request) {
+func (g Gallery) New(w http.ResponseWriter, r *http.Request) {
 	var data struct {
 		Title string
 	}
