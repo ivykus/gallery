@@ -71,3 +71,36 @@ func (g Gallery) Edit(w http.ResponseWriter, r *http.Request) {
 	data.Title = gallery.Title
 	g.Template.Edit.Execute(w, r, data)
 }
+
+func (g Gallery) Update(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "Invalid gallery ID", http.StatusNotFound)
+		return
+	}
+	gallery, err := g.GalleryService.ByID(id)
+	if err != nil {
+		if errors.Is(err, models.ErrNotFound) {
+			http.Error(w, "Gallery not found", http.StatusNotFound)
+			return
+		}
+		fmt.Println("gallery edit", err.Error())
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+	user := context.User(r.Context())
+	if gallery.UserID != user.Id {
+		http.Error(w, "You do not have permission to edit this gallery", http.StatusForbidden)
+		return
+	}
+
+	gallery.Title = r.FormValue("title")
+	err = g.GalleryService.Update(gallery)
+	if err != nil {
+		fmt.Println("gallery edit", err.Error())
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+	editURL := fmt.Sprintf("/galleries/%d/edit", gallery.ID)
+	http.Redirect(w, r, editURL, http.StatusFound)
+}
