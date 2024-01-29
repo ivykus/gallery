@@ -26,8 +26,7 @@ func setCookie(w http.ResponseWriter, name, value string) {
 func readCookie(r *http.Request, name string) (string, error) {
 	cookie, err := r.Cookie(name)
 	if err != nil {
-		fmt.Printf("Error getting cookie: %v\n", err)
-		return "", err
+		return "", fmt.Errorf("read cookie %s: %w", name, err)
 	}
 	return cookie.Value, nil
 }
