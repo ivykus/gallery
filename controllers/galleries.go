@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"fmt"
+	"math/rand"
 	"net/http"
 	"strconv"
 
@@ -13,6 +14,7 @@ import (
 
 type Gallery struct {
 	Template struct {
+		Show  Template
 		New   Template
 		Edit  Template
 		Index Template
@@ -41,6 +43,39 @@ func (g Gallery) Create(w http.ResponseWriter, r *http.Request) {
 	}
 	editURL := fmt.Sprintf("/galleries/%d/edit", gallery.ID)
 	http.Redirect(w, r, editURL, http.StatusFound)
+}
+
+func (g Gallery) Show(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "Invalid gallery ID", http.StatusNotFound)
+		return
+	}
+	gallery, err := g.GalleryService.ByID(id)
+	if err != nil {
+		if errors.Is(err, models.ErrNotFound) {
+			http.Error(w, "Gallery not found", http.StatusNotFound)
+			return
+		}
+		fmt.Println("gallery show", err.Error())
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+	var data struct {
+		ID     int
+		Title  string
+		Images []string
+	}
+
+	data.ID = gallery.ID
+	data.Title = gallery.Title
+	for i := 0; i < 15; i++ {
+		w, h := rand.Intn(500)+200, rand.Intn(500)+200
+		randImgURL := fmt.Sprintf("https://placeimg.com/%d/%d/any", w, h)
+		data.Images = append(data.Images, randImgURL)
+	}
+
+	g.Template.Show.Execute(w, r, data)
 }
 
 func (g Gallery) Edit(w http.ResponseWriter, r *http.Request) {
