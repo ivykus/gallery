@@ -13,7 +13,8 @@ import (
 
 type Gallery struct {
 	Template struct {
-		New Template
+		New  Template
+		Edit Template
 	}
 	GalleryService *models.GalleryService
 }
@@ -57,5 +58,16 @@ func (g Gallery) Edit(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
 		return
 	}
-	g.Template.New.Execute(w, r, gallery)
+	user := context.User(r.Context())
+	if gallery.UserID != user.Id {
+		http.Error(w, "You do not have permission to edit this gallery", http.StatusForbidden)
+		return
+	}
+	var data struct {
+		Title string
+		ID    int
+	}
+	data.ID = gallery.ID
+	data.Title = gallery.Title
+	g.Template.Edit.Execute(w, r, data)
 }
