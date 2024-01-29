@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"path"
 
 	"github.com/gorilla/csrf"
 	"github.com/ivykus/gallery/context"
@@ -29,8 +30,10 @@ type public interface {
 }
 
 func ParseFS(fs fs.FS, patterns ...string) (Template, error) {
-	tpl := template.New(patterns[0])
+	tpl := template.New(path.Base(patterns[0]))
 	tpl = tpl.Funcs(template.FuncMap{
+		// these functions are implemented in the Template.Execute method
+		// when all needed data is provided
 		"csrfField": func() (template.HTML, error) {
 			return "", fmt.Errorf("csrfField not implemented")
 		},
@@ -38,11 +41,7 @@ func ParseFS(fs fs.FS, patterns ...string) (Template, error) {
 			return "", fmt.Errorf("currentUser not implemented")
 		},
 		"errors": func() []string {
-			return []string{
-				"Error1",
-				"Error2",
-				"Error3",
-			}
+			return nil
 		},
 	})
 	tmpl, err := tpl.ParseFS(fs, patterns...)
