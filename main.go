@@ -146,6 +146,7 @@ func main() {
 		r.Get("/", usersC.CurrentUser)
 	})
 	r.Route("/galleries", func(r chi.Router) {
+		r.Get("/{id}/images/{filename}", galleriesC.Image)
 		r.Get("/{id}/show", galleriesC.Show)
 		r.Group(func(r chi.Router) {
 			r.Use(umw.RequireUser)
