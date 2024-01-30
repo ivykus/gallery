@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"fmt"
-	"math/rand"
 	"net/http"
 	"strconv"
 
@@ -51,19 +50,34 @@ func (g Gallery) Show(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	type Image struct {
+		GalleryID int
+		Filename  string
+	}
+
 	var data struct {
 		ID     int
 		Title  string
-		Images []string
+		Images []Image
 	}
 
 	data.ID = gallery.ID
 	data.Title = gallery.Title
-	for i := 0; i < 15; i++ {
-		w, h := rand.Intn(500)+200, rand.Intn(500)+200
-		randImgURL := fmt.Sprintf("https://placebear.com/%d/%d", w, h)
-		data.Images = append(data.Images, randImgURL)
+
+	images, err := g.GalleryService.Images(gallery.ID)
+	if err != nil {
+		fmt.Println("gallery show", err.Error())
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
 	}
+
+	for _, image := range images {
+		data.Images = append(data.Images, Image{
+			GalleryID: gallery.ID,
+			Filename:  image.Filename,
+		})
+	}
+
 	g.Template.Show.Execute(w, r, data)
 }
 
@@ -138,6 +152,39 @@ func (g Gallery) Index(w http.ResponseWriter, r *http.Request) {
 	}
 
 	g.Template.Index.Execute(w, r, data)
+}
+
+func (g Gallery) Image(w http.ResponseWriter, r *http.Request) {
+	galleryId, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "Invalid gallery ID", http.StatusNotFound)
+		return
+	}
+	filename := chi.URLParam(r, "filename")
+
+	images, err := g.GalleryService.Images(galleryId)
+	fmt.Println(images)
+	if err != nil {
+		fmt.Println("gallery image", err.Error())
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+	var requestedImage models.Image
+	imageFound := false
+	for _, image := range images {
+		if image.Filename == filename {
+			requestedImage = image
+			imageFound = true
+			break
+		}
+	}
+	if !imageFound {
+		http.Error(w, "Image not found", http.StatusNotFound)
+		return
+	}
+	fmt.Println(requestedImage)
+
+	http.ServeFile(w, r, requestedImage.Path)
 }
 
 type galleryOpt func(w http.ResponseWriter, r *http.Request, gallery *models.Gallery) error
