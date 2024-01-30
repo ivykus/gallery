@@ -99,6 +99,20 @@ func (g Gallery) Update(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, editURL, http.StatusFound)
 }
 
+func (g Gallery) Delete(w http.ResponseWriter, r *http.Request) {
+	gallery, err := g.getGalleryByID(w, r, userMustOwnGallery)
+	if err != nil {
+		return
+	}
+	err = g.GalleryService.Delete(gallery.ID)
+	if err != nil {
+		fmt.Println("gallery delete", err.Error())
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w, r, "/galleries", http.StatusFound)
+}
+
 func (g Gallery) Index(w http.ResponseWriter, r *http.Request) {
 	type gallery struct {
 		ID    int
