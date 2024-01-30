@@ -71,10 +71,9 @@ func (g Gallery) Show(w http.ResponseWriter, r *http.Request) {
 	data.Title = gallery.Title
 	for i := 0; i < 15; i++ {
 		w, h := rand.Intn(500)+200, rand.Intn(500)+200
-		randImgURL := fmt.Sprintf("https://placeimg.com/%d/%d/any", w, h)
+		randImgURL := fmt.Sprintf("https://placebear.com/%d/%d", w, h)
 		data.Images = append(data.Images, randImgURL)
 	}
-
 	g.Template.Show.Execute(w, r, data)
 }
 
