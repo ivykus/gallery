@@ -162,29 +162,18 @@ func (g Gallery) Image(w http.ResponseWriter, r *http.Request) {
 	}
 	filename := chi.URLParam(r, "filename")
 
-	images, err := g.GalleryService.Images(galleryId)
-	fmt.Println(images)
+	image, err := g.GalleryService.Image(galleryId, filename)
 	if err != nil {
+		if errors.Is(err, models.ErrNotFound) {
+			http.Error(w, "Image not found", http.StatusNotFound)
+			return
+		}
 		fmt.Println("gallery image", err.Error())
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
 		return
 	}
-	var requestedImage models.Image
-	imageFound := false
-	for _, image := range images {
-		if image.Filename == filename {
-			requestedImage = image
-			imageFound = true
-			break
-		}
-	}
-	if !imageFound {
-		http.Error(w, "Image not found", http.StatusNotFound)
-		return
-	}
-	fmt.Println(requestedImage)
 
-	http.ServeFile(w, r, requestedImage.Path)
+	http.ServeFile(w, r, image.Path)
 }
 
 type galleryOpt func(w http.ResponseWriter, r *http.Request, gallery *models.Gallery) error
