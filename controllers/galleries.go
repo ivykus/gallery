@@ -68,16 +68,11 @@ func (g Gallery) Show(w http.ResponseWriter, r *http.Request) {
 }
 
 func (g Gallery) Edit(w http.ResponseWriter, r *http.Request) {
-	gallery, err := g.getGalleryByID(w, r)
+	gallery, err := g.getGalleryByID(w, r, userMustOwnGallery)
 	if err != nil {
 		return
 	}
 
-	user := context.User(r.Context())
-	if gallery.UserID != user.Id {
-		http.Error(w, "You do not have permission to edit this gallery", http.StatusForbidden)
-		return
-	}
 	var data struct {
 		Title string
 		ID    int
@@ -88,14 +83,8 @@ func (g Gallery) Edit(w http.ResponseWriter, r *http.Request) {
 }
 
 func (g Gallery) Update(w http.ResponseWriter, r *http.Request) {
-	gallery, err := g.getGalleryByID(w, r)
+	gallery, err := g.getGalleryByID(w, r, userMustOwnGallery)
 	if err != nil {
-		return
-	}
-
-	user := context.User(r.Context())
-	if gallery.UserID != user.Id {
-		http.Error(w, "You do not have permission to edit this gallery", http.StatusForbidden)
 		return
 	}
 
@@ -137,7 +126,9 @@ func (g Gallery) Index(w http.ResponseWriter, r *http.Request) {
 	g.Template.Index.Execute(w, r, data)
 }
 
-func (g Gallery) getGalleryByID(w http.ResponseWriter, r *http.Request) (*models.Gallery, error) {
+type galleryOpt func(w http.ResponseWriter, r *http.Request, gallery *models.Gallery) error
+
+func (g Gallery) getGalleryByID(w http.ResponseWriter, r *http.Request, opts ...galleryOpt) (*models.Gallery, error) {
 	id, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
 		http.Error(w, "Invalid gallery ID", http.StatusNotFound)
@@ -153,5 +144,21 @@ func (g Gallery) getGalleryByID(w http.ResponseWriter, r *http.Request) (*models
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
 		return nil, err
 	}
+
+	for _, opt := range opts {
+		if err := opt(w, r, gallery); err != nil {
+			return nil, err
+		}
+	}
+
 	return gallery, nil
+}
+
+func userMustOwnGallery(w http.ResponseWriter, r *http.Request, gallery *models.Gallery) error {
+	user := context.User(r.Context())
+	if gallery.UserID != user.Id {
+		http.Error(w, "You do not have permission to edit this gallery", http.StatusForbidden)
+		return fmt.Errorf("user %d does not own gallery %d", user.Id, gallery.ID)
+	}
+	return nil
 }
