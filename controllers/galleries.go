@@ -46,21 +46,11 @@ func (g Gallery) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (g Gallery) Show(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	gallery, err := g.getGalleryByID(w, r)
 	if err != nil {
-		http.Error(w, "Invalid gallery ID", http.StatusNotFound)
 		return
 	}
-	gallery, err := g.GalleryService.ByID(id)
-	if err != nil {
-		if errors.Is(err, models.ErrNotFound) {
-			http.Error(w, "Gallery not found", http.StatusNotFound)
-			return
-		}
-		fmt.Println("gallery show", err.Error())
-		http.Error(w, "Something went wrong", http.StatusInternalServerError)
-		return
-	}
+
 	var data struct {
 		ID     int
 		Title  string
@@ -78,21 +68,11 @@ func (g Gallery) Show(w http.ResponseWriter, r *http.Request) {
 }
 
 func (g Gallery) Edit(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	gallery, err := g.getGalleryByID(w, r)
 	if err != nil {
-		http.Error(w, "Invalid gallery ID", http.StatusNotFound)
 		return
 	}
-	gallery, err := g.GalleryService.ByID(id)
-	if err != nil {
-		if errors.Is(err, models.ErrNotFound) {
-			http.Error(w, "Gallery not found", http.StatusNotFound)
-			return
-		}
-		fmt.Println("gallery edit", err.Error())
-		http.Error(w, "Something went wrong", http.StatusInternalServerError)
-		return
-	}
+
 	user := context.User(r.Context())
 	if gallery.UserID != user.Id {
 		http.Error(w, "You do not have permission to edit this gallery", http.StatusForbidden)
@@ -108,21 +88,11 @@ func (g Gallery) Edit(w http.ResponseWriter, r *http.Request) {
 }
 
 func (g Gallery) Update(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	gallery, err := g.getGalleryByID(w, r)
 	if err != nil {
-		http.Error(w, "Invalid gallery ID", http.StatusNotFound)
 		return
 	}
-	gallery, err := g.GalleryService.ByID(id)
-	if err != nil {
-		if errors.Is(err, models.ErrNotFound) {
-			http.Error(w, "Gallery not found", http.StatusNotFound)
-			return
-		}
-		fmt.Println("gallery edit", err.Error())
-		http.Error(w, "Something went wrong", http.StatusInternalServerError)
-		return
-	}
+
 	user := context.User(r.Context())
 	if gallery.UserID != user.Id {
 		http.Error(w, "You do not have permission to edit this gallery", http.StatusForbidden)
@@ -165,4 +135,23 @@ func (g Gallery) Index(w http.ResponseWriter, r *http.Request) {
 	}
 
 	g.Template.Index.Execute(w, r, data)
+}
+
+func (g Gallery) getGalleryByID(w http.ResponseWriter, r *http.Request) (*models.Gallery, error) {
+	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "Invalid gallery ID", http.StatusNotFound)
+		return nil, err
+	}
+	gallery, err := g.GalleryService.ByID(id)
+	if err != nil {
+		if errors.Is(err, models.ErrNotFound) {
+			http.Error(w, "Gallery not found", http.StatusNotFound)
+			return nil, err
+		}
+		fmt.Println("gallery show", err.Error())
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return nil, err
+	}
+	return gallery, nil
 }
