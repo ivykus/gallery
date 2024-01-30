@@ -3,9 +3,18 @@ package models
 import (
 	"database/sql"
 	"fmt"
+	"path/filepath"
+	"strings"
 
 	"github.com/ivykus/gallery/errors"
 )
+
+type Image struct {
+	// TODO add fields
+	GalleryID int
+	Path      string
+	Filename  string
+}
 
 type Gallery struct {
 	ID     int
@@ -15,6 +24,8 @@ type Gallery struct {
 
 type GalleryService struct {
 	DB *sql.DB
+
+	ImagesDir string
 }
 
 func (gs *GalleryService) Create(title string, userID int) (*Gallery, error) {
@@ -104,4 +115,49 @@ func (gs *GalleryService) Delete(galleryID int) error {
 		return fmt.Errorf("delete gallery: %w", err)
 	}
 	return nil
+}
+
+func (gs *GalleryService) Images(galleryID int) ([]Image, error) {
+	globPattern := filepath.Join(gs.galleryDir(galleryID), "*")
+	allFiles, err := filepath.Glob(globPattern)
+	if err != nil {
+		return nil, fmt.Errorf("getting gallery images: %w", err)
+	}
+
+	var images []Image
+	for _, file := range allFiles {
+		if hasExtension(file, gs.extensions()) {
+			images = append(images, Image{
+				GalleryID: galleryID,
+				Path:      file,
+				Filename:  filepath.Base(file),
+			})
+		}
+	}
+
+	return images, nil
+}
+
+func hasExtension(file string, exts []string) bool {
+	file = strings.ToLower(file)
+	for _, ext := range exts {
+		ext = strings.ToLower(ext)
+		if filepath.Ext(file) == ext {
+			return true
+		}
+	}
+	return false
+}
+
+func (gs *GalleryService) extensions() []string {
+	return []string{".jpg", ".jpeg", ".png", ".gif"}
+}
+
+func (gs *GalleryService) galleryDir(galleryID int) string {
+	galleryDir := gs.ImagesDir
+	if galleryDir == "" {
+		galleryDir = "images"
+	}
+
+	return filepath.Join(galleryDir, fmt.Sprintf("gallery-%d", galleryID))
 }

@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/go-mail/mail/v2"
+	"github.com/ivykus/gallery/models"
 )
 
 // Host	sandbox-smtp.mailcatch.app
@@ -19,25 +19,11 @@ const (
 )
 
 func main() {
-	from := "test@ivygallery.com"
-	to := "themoonissilent@gmail.com"
-	subject := "this is a test email"
-	plaintext := "this is a body"
-	html := "<h1>Hello</h1><p>This is email</p>"
-
-	msg := mail.NewMessage()
-	msg.SetHeader("To", to)
-	msg.SetHeader("From", from)
-	msg.SetHeader("Subject", subject)
-	msg.SetBody("text/plain", plaintext)
-	msg.AddAlternative("text/html", html)
-	// msg.WriteTo(os.Stdout)
-
-	dialer := mail.NewDialer(host, port, username, password)
-	err := dialer.DialAndSend(msg)
+	gs := models.GalleryService{}
+	images, err := gs.Images(5)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Msg sent")
+	fmt.Println(images)
 
 }
