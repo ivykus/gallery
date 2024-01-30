@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -136,6 +137,19 @@ func (gs *GalleryService) Images(galleryID int) ([]Image, error) {
 	}
 
 	return images, nil
+}
+
+func (gs *GalleryService) Image(galleryID int, filename string) (Image, error) {
+	imagePath := filepath.Join(gs.galleryDir(galleryID), filename)
+	_, err := os.Stat(imagePath)
+	if errors.Is(err, os.ErrNotExist) {
+		return Image{}, ErrNotFound
+	}
+	return Image{
+		GalleryID: galleryID,
+		Path:      imagePath,
+		Filename:  filepath.Base(imagePath),
+	}, nil
 }
 
 func hasExtension(file string, exts []string) bool {
