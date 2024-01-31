@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -151,6 +152,28 @@ func (gs *GalleryService) Image(galleryID int, filename string) (Image, error) {
 	}, nil
 }
 
+func (gs *GalleryService) CreateImage(galleryID int, filename string, contents io.Reader) error {
+	galleryDir := gs.galleryDir(galleryID)
+
+	err := os.MkdirAll(galleryDir, 0755)
+	if err != nil {
+		return fmt.Errorf("create dir in gallery %d: %w", galleryID, err)
+	}
+
+	imagePath := filepath.Join(galleryDir, filename)
+	dest, err := os.Create(imagePath)
+	if err != nil {
+		return fmt.Errorf("create image: %w", err)
+	}
+	defer dest.Close()
+
+	_, err = io.Copy(dest, contents)
+	if err != nil {
+		return fmt.Errorf("create image: %w", err)
+	}
+
+	return nil
+}
 func (gs *GalleryService) DeleteImage(galleryID int, filename string) error {
 	image, err := gs.Image(galleryID, filename)
 	if err != nil {
