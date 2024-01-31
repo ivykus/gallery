@@ -145,6 +145,7 @@ func main() {
 		r.Use(umw.RequireUser)
 		r.Get("/", usersC.CurrentUser)
 	})
+
 	r.Route("/galleries", func(r chi.Router) {
 		r.Get("/{id}/images/{filename}", galleriesC.Image)
 		r.Get("/{id}/show", galleriesC.Show)
@@ -155,6 +156,7 @@ func main() {
 			r.Post("/", galleriesC.Create)
 			r.Get("/{id}/edit", galleriesC.Edit)
 			r.Post("/{id}", galleriesC.Update)
+			r.Post("/{id}/images/create", galleriesC.UploadImage)
 			r.Post("/{id}/delete", galleriesC.Delete)
 			r.Post("/{id}/images/{filename}/delete", galleriesC.DeleteImage)
 		})
