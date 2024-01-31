@@ -202,6 +202,28 @@ func (g Gallery) Image(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, image.Path)
 }
 
+func (g Gallery) DeleteImage(w http.ResponseWriter, r *http.Request) {
+	filename := chi.URLParam(r, "filename")
+
+	gallery, err := g.getGalleryByID(w, r, userMustOwnGallery)
+	if err != nil {
+		return
+	}
+
+	err = g.GalleryService.DeleteImage(gallery.ID, filename)
+	if err != nil {
+		// if errors.Is(err, models.ErrNotFound) {
+		//TODO maybe show to user that image was not found
+		// }
+		fmt.Println("gallery delete image", err.Error())
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+
+	editPath := fmt.Sprintf("/galleries/%d/edit", gallery.ID)
+	http.Redirect(w, r, editPath, http.StatusFound)
+}
+
 type galleryOpt func(w http.ResponseWriter, r *http.Request, gallery *models.Gallery) error
 
 func (g Gallery) getGalleryByID(w http.ResponseWriter, r *http.Request, opts ...galleryOpt) (*models.Gallery, error) {
