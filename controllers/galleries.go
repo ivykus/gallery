@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
@@ -186,7 +187,7 @@ func (g Gallery) Image(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid gallery ID", http.StatusNotFound)
 		return
 	}
-	filename := chi.URLParam(r, "filename")
+	filename := g.getFilename(w, r)
 
 	image, err := g.GalleryService.Image(galleryId, filename)
 	if err != nil {
@@ -203,7 +204,7 @@ func (g Gallery) Image(w http.ResponseWriter, r *http.Request) {
 }
 
 func (g Gallery) DeleteImage(w http.ResponseWriter, r *http.Request) {
-	filename := chi.URLParam(r, "filename")
+	filename := g.getFilename(w, r)
 
 	gallery, err := g.getGalleryByID(w, r, userMustOwnGallery)
 	if err != nil {
@@ -222,6 +223,12 @@ func (g Gallery) DeleteImage(w http.ResponseWriter, r *http.Request) {
 
 	editPath := fmt.Sprintf("/galleries/%d/edit", gallery.ID)
 	http.Redirect(w, r, editPath, http.StatusFound)
+}
+
+func (g Gallery) getFilename(w http.ResponseWriter, r *http.Request) string {
+	filename := chi.URLParam(r, "filename")
+	filename = filepath.Base(filename)
+	return filename
 }
 
 type galleryOpt func(w http.ResponseWriter, r *http.Request, gallery *models.Gallery) error
