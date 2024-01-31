@@ -88,9 +88,10 @@
 
 {{define "upload_image_form"}}
 <form
-    action="/galleries/{{.ID}}/images/"
+    action="/galleries/{{.ID}}/images/create"
     method="post"
     enctype="multipart/form-data">
+    {{csrfField}}
     <div class="py-2">
         <label for="images" class="block text-sm mb-2 font-semibold text-gray-800">
         Add Images
@@ -103,7 +104,6 @@
         <input name="images" type="file" multiple accept="image/png, image/jpeg, image/gif" id="images"/> 
     
     </div>
-    {{csrfField}}
     <button type="submit"
         class="
             py-2 px-8
